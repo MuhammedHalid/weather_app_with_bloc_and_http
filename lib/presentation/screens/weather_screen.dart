@@ -1,8 +1,10 @@
 import 'dart:convert';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
+import 'package:weather_app_with_bloc_and_http/bloc/weather_bloc.dart';
 import 'package:weather_app_with_bloc_and_http/presentation/widgets/additional_info_item.dart';
 import 'package:weather_app_with_bloc_and_http/presentation/widgets/hourly_forcast_item.dart';
 import 'package:weather_app_with_bloc_and_http/secrets.dart';
@@ -15,14 +17,10 @@ class WeatherScreen extends StatefulWidget {
 }
 
 class _WeatherScreenState extends State<WeatherScreen> {
-  late Future<Map<String, dynamic>> weather;
-
- 
-
   @override
   void initState() {
     super.initState();
-
+    context.read<WeatherBloc>().add(WeatherFetched());
   }
 
   @override
@@ -39,38 +37,45 @@ class _WeatherScreenState extends State<WeatherScreen> {
         actions: [
           IconButton(
             onPressed: () {
-              setState(() {
-
-              });
+              // setState(() {});
             },
             icon: const Icon(Icons.refresh),
           ),
         ],
       ),
-      body: FutureBuilder(
-        future: weather,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator.adaptive(),
-            );
-          }
-
-          if (snapshot.hasError) {
+      body: BlocBuilder<WeatherBloc, WeatherState>(
+        builder: (context, state) {
+          if (state is WeatherFailue) {
             return Center(
-              child: Text(snapshot.error.toString()),
+              child: Text(state.error),
             );
           }
+          if (state is! WeatherSuccess) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          }
+          // if (snapshot.connectionState == ConnectionState.waiting) {
+          //   return const Center(
+          //     child: CircularProgressIndicator.adaptive(),
+          //   );
+          // }
 
-          final data = snapshot.data!;
+          // if (snapshot.hasError) {
+          //   return Center(
+          //     child: Text(snapshot.error.toString()),
+          //   );
+          // }
 
-          final currentWeatherData = data['list'][0];
+          final data = state.weatherModel;
 
-          final currentTemp = currentWeatherData['main']['temp'];
-          final currentSky = currentWeatherData['weather'][0]['main'];
-          final currentPressure = currentWeatherData['main']['pressure'];
-          final currentWindSpeed = currentWeatherData['wind']['speed'];
-          final currentHumidity = currentWeatherData['main']['humidity'];
+
+
+          final currentTemp = data.currentTemp;
+          final currentSky = data.currentSky;
+          final currentPressure = data.currentPressure;
+          final currentWindSpeed = data.currentWindSpeed;
+          final currentHumidity = data.cuurentHumidity;
 
           return Padding(
             padding: const EdgeInsets.all(16.0),
@@ -135,25 +140,24 @@ class _WeatherScreenState extends State<WeatherScreen> {
                 const SizedBox(height: 8),
                 SizedBox(
                   height: 120,
-                  child: ListView.builder(
-                    itemCount: 5,
-                    scrollDirection: Axis.horizontal,
-                    itemBuilder: (context, index) {
-                      final hourlyForecast = data['list'][index + 1];
-                      final hourlySky =
-                          data['list'][index + 1]['weather'][0]['main'];
-                      final hourlyTemp =
-                          hourlyForecast['main']['temp'].toString();
-                      final time = DateTime.parse(hourlyForecast['dt_txt']);
-                      return HourlyForecastItem(
-                        time: DateFormat.j().format(time),
-                        temperature: hourlyTemp,
-                        icon: hourlySky == 'Clouds' || hourlySky == 'Rain'
-                            ? Icons.cloud
-                            : Icons.sunny,
-                      );
-                    },
-                  ),
+                  // child: ListView.builder(
+                  //   itemCount: 5,
+                  //   scrollDirection: Axis.horizontal,
+                  //   itemBuilder: (context, index) {
+                  //     //final hourlyForecast = data['list'][index + 1];
+                  //     final hourlyForecast = data;
+                  //     final hourlySky =data.currentSky;
+                  //     final hourlyTemp =data.currentTemp;
+                  //     final time = DateTime.parse(hourlyForecast.toString());
+                  //     return HourlyForecastItem(
+                  //       time: DateFormat.j().format(time),
+                  //       temperature: hourlyTemp.toString(),
+                  //       icon: hourlySky == 'Clouds' || hourlySky == 'Rain'
+                  //           ? Icons.cloud
+                  //           : Icons.sunny,
+                  //     );
+                  //   },
+                  // ),
                 ),
 
                 const SizedBox(height: 20),
